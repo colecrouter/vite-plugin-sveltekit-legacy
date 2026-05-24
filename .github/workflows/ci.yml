@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run check
+      - run: npm test
+      - run: npm pack --dry-run
+
+  peer-compatibility:
+    name: Vite ${{ matrix.vite }} / Legacy ${{ matrix.legacy }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - vite: 5
+            legacy: 5
+          - vite: 6
+            legacy: 6
+          - vite: 7
+            legacy: 7
+          - vite: 8
+            legacy: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save vite@${{ matrix.vite }} @vitejs/plugin-legacy@${{ matrix.legacy }}
+      - run: npm run check
+      - run: npm test

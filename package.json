@@ -1,0 +1,53 @@
+{
+	"name": "vite-plugin-sveltekit-legacy",
+	"version": "0.1.0",
+	"description": "Modern polyfill ordering for SvelteKit builds using @vitejs/plugin-legacy.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/colecrouter/vite-plugin-sveltekit-legacy.git"
+	},
+	"bugs": {
+		"url": "https://github.com/colecrouter/vite-plugin-sveltekit-legacy/issues"
+	},
+	"keywords": [
+		"vite",
+		"svelte",
+		"sveltekit",
+		"polyfill",
+		"legacy",
+		"browser"
+	],
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"build": "tsc",
+		"check": "npm run build && tsc -p tsconfig.test.json --pretty",
+		"format": "biome format --write .",
+		"lint": "biome ci .",
+		"prepack": "npm run build",
+		"test": "npm run build && node --test \"test/**/*.test.ts\""
+	},
+	"peerDependencies": {
+		"@vitejs/plugin-legacy": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
+		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"@types/node": "^25.9.1",
+		"@vitejs/plugin-legacy": "^8.0.2",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.14"
+	}
+}
