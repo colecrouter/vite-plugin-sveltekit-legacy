@@ -30,11 +30,48 @@ jobs:
         include:
           - vite: 5
             legacy: 5
+            sveltePlugin: 3
           - vite: 6
             legacy: 6
+            sveltePlugin: 5
           - vite: 7
             legacy: 7
+            sveltePlugin: 6
           - vite: 8
+            legacy: 8
+            sveltePlugin: 7
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save vite@${{ matrix.vite }} @vitejs/plugin-legacy@${{ matrix.legacy }} @sveltejs/vite-plugin-svelte@${{ matrix.sveltePlugin }}
+      - run: npm run check
+      - run: npm test
+
+  sveltekit-build:
+    name: SvelteKit ${{ matrix.kit }} production build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kit: 2.0.0
+            vite: 5
+            svelte: 4
+            sveltePlugin: 3
+            legacy: 5
+          - kit: 2
+            vite: 6
+            svelte: 5
+            sveltePlugin: 5
+            legacy: 6
+          - kit: 3.0.0
+            vite: 8
+            svelte: 5
+            sveltePlugin: 7
             legacy: 8
     steps:
       - uses: actions/checkout@v5
@@ -43,6 +80,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm install --no-save vite@${{ matrix.vite }} @vitejs/plugin-legacy@${{ matrix.legacy }}
-      - run: npm run check
-      - run: npm test
+      - run: npm run build
+      - run: npm install --prefix test/fixtures/app --no-save @sveltejs/kit@${{ matrix.kit }} @sveltejs/vite-plugin-svelte@${{ matrix.sveltePlugin }} svelte@${{ matrix.svelte }} vite@${{ matrix.vite }} @vitejs/plugin-legacy@${{ matrix.legacy }} terser
+      - run: npm install --no-save vite@${{ matrix.vite }} @vitejs/plugin-legacy@${{ matrix.legacy }} @sveltejs/vite-plugin-svelte@${{ matrix.sveltePlugin }}
+      - run: npm run build --prefix test/fixtures/app
+      - run: node test/assert-integration.mjs

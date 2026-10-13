@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import type { Plugin, ResolvedConfig } from "vite";
 import legacy from "../dist/index.js";
 import { rewriteSvelteKitClientEntries } from "../dist/rewrite.js";
 
@@ -34,6 +35,63 @@ describe("legacy", () => {
 				new RegExp(`${optionName} is not supported`),
 			);
 		}
+	});
+});
+
+describe("build lifecycle", () => {
+	function run(environmentName?: string, ssr = false) {
+		const fixtureDir = createClientBuild({
+			manifest: splitManifest({
+				polyfillFile: "_app/immutable/polyfills.js",
+				startFile: "_app/immutable/entry/start.js",
+				appFile: "_app/immutable/entry/app.js",
+			}),
+			files: {
+				"_app/immutable/polyfills.js": "globalThis.polyfilled = true;",
+				"_app/immutable/entry/start.js": "export const start = () => {};",
+				"_app/immutable/entry/app.js": "export const app = {};",
+			},
+		});
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), "legacy-build-"));
+		const clientOutDir = path.join(root, "output", "client");
+		fs.mkdirSync(path.dirname(clientOutDir), { recursive: true });
+		fs.renameSync(fixtureDir, clientOutDir);
+		const plugin = legacy().at(-1) as Plugin;
+		const config = {
+			root,
+			build: {
+				ssr,
+				outDir: ssr || environmentName ? "missing-server-output" : clientOutDir,
+			},
+		} as ResolvedConfig;
+		// The client environment must supply the output path, even when the
+		// shared config points at SSR output and says it is an SSR build.
+		const environment = environmentName
+			? {
+					name: environmentName,
+					config: { ...config, build: { ssr: false, outDir: clientOutDir } },
+				}
+			: undefined;
+		const resolve = plugin.configResolved as (config: ResolvedConfig) => void;
+		resolve(config);
+		const writeBundle = plugin.writeBundle as unknown as (this: object) => void;
+		writeBundle.call(environment ? { environment } : {});
+		return read(clientOutDir, "_app/immutable/entry/start.js");
+	}
+
+	it("skips old Vite SSR builds without reading a client manifest", () => {
+		assert.doesNotMatch(run(undefined, true), /legacy-polyfills/);
+	});
+	it("wraps old Vite client builds", () => {
+		assert.match(run(), /legacy-polyfills/);
+	});
+	it("skips SSR and custom server environments despite shared client config", () => {
+		for (const name of ["ssr", "prerender", "server"]) {
+			assert.doesNotMatch(run(name), /legacy-polyfills/);
+		}
+	});
+	it("wraps the client environment using its own output directory", () => {
+		assert.match(run("client", true), /legacy-polyfills/);
 	});
 });
 

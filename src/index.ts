@@ -9,7 +9,10 @@ const PLUGIN_NAME = "vite-plugin-sveltekit-legacy";
 export interface SvelteKitLegacyOptions
 	extends Pick<
 		LegacyOptions,
-		"additionalModernPolyfills" | "assumptions" | "modernTargets"
+		Extract<
+			keyof LegacyOptions,
+			"additionalModernPolyfills" | "assumptions" | "modernTargets"
+		>
 	> {
 	outDir?: string;
 	failOnMissingPolyfills?: boolean;
@@ -56,9 +59,19 @@ function createEntryWrapperPlugin(options: {
 			config = resolved;
 		},
 		writeBundle() {
-			if (config.build.ssr) return;
+			// Older Vite builds expose only the resolved config. Environment builds
+			// share that config across SSR/client, so use the active environment.
+			const environment = (
+				this as unknown as {
+					environment?: { name: string; config: ResolvedConfig };
+				}
+			).environment;
+			if (environment ? environment.name !== "client" : config.build.ssr) {
+				return;
+			}
+			const clientConfig = environment?.config ?? config;
 
-			const clientOutDir = getClientOutDir(config, options.outDir);
+			const clientOutDir = getClientOutDir(clientConfig, options.outDir);
 			const result = rewriteSvelteKitClientEntries({
 				clientOutDir,
 				failOnMissingPolyfills: options.failOnMissingPolyfills,
