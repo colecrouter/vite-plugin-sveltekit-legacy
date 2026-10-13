@@ -6,7 +6,7 @@ This plugin wraps SvelteKit's emitted client entry modules so the generated `vit
 
 ## Compatibility
 
-Supports SvelteKit `^2.70.3 || ^3.0.0`. These lower bounds are production-build tested; earlier Kit 2 versions are not claimed without verification. CI builds real SvelteKit 2 / Vite 6 and SvelteKit 3 / Vite 8 applications and checks the emitted entry imports. Vite 5–8 peer compatibility is checked separately. In environment builds, only the `client` environment is rewritten; SSR and custom server environments are skipped.
+Supports SvelteKit `^2.0.0 || ^3.0.0`. CI verifies the Kit 2.0.0 / Svelte 4 / Vite 5 lower bound, current Kit 2 / Vite 6, and Kit 3.0.0 / Vite 8. CI builds real SvelteKit 2 / Vite 6 and SvelteKit 3 / Vite 8 applications and checks the emitted entry imports. Vite 5–8 peer compatibility is checked separately. In environment builds, only the `client` environment is rewritten; SSR and custom server environments are skipped.
 
 ## Usage
 
