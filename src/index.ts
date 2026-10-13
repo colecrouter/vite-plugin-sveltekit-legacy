@@ -9,7 +9,10 @@ const PLUGIN_NAME = "vite-plugin-sveltekit-legacy";
 export interface SvelteKitLegacyOptions
 	extends Pick<
 		LegacyOptions,
-		"additionalModernPolyfills" | "assumptions" | "modernTargets"
+		Extract<
+			keyof LegacyOptions,
+			"additionalModernPolyfills" | "assumptions" | "modernTargets"
+		>
 	> {
 	outDir?: string;
 	failOnMissingPolyfills?: boolean;
