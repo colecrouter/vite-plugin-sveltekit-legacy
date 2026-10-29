@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Expose upstream `modernPolyfills` selection while retaining automatic detection by default. Applications can provide a target-based list when native browser behavior should be preserved.
+
 ## 0.1.1
 
 - Support SvelteKit 3 environment builds: rewrite only the client environment, using its output configuration rather than shared SSR configuration.

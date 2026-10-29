@@ -3,11 +3,18 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import type { Plugin, ResolvedConfig } from "vite";
+import { build, type Plugin, type ResolvedConfig } from "vite";
+import vm from "node:vm";
 import legacy from "../dist/index.js";
 import { rewriteSvelteKitClientEntries } from "../dist/rewrite.js";
 
 describe("legacy", () => {
+	it("accepts upstream modern polyfill selection options", () => {
+		for (const modernPolyfills of [true, false, ["es.array.at"]]) {
+			assert.doesNotThrow(() => legacy({ modernPolyfills }));
+		}
+	});
+
 	it("rejects full legacy chunks", () => {
 		assert.throws(
 			() => legacy({ renderLegacyChunks: true } as never),
@@ -28,12 +35,54 @@ describe("legacy", () => {
 			"polyfills",
 			"additionalLegacyPolyfills",
 			"externalSystemJS",
-			"modernPolyfills",
 		]) {
 			assert.throws(
 				() => legacy({ [optionName]: true } as never),
 				new RegExp(`${optionName} is not supported`),
 			);
+		}
+	});
+});
+
+describe("explicit polyfill output", () => {
+	it("installs the requested shim without replacing an excluded native API", async () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), "legacy-selection-"));
+		try {
+			// Usage detection would select structuredClone here. The explicit list must
+			// take precedence and still emit the requested Array.at compatibility shim.
+			const entry = path.join(root, "entry.js");
+			fs.writeFileSync(
+				entry,
+				"globalThis.copy = structuredClone({ value: 1 });",
+			);
+			const result = await build({
+				root,
+				configFile: false,
+				logLevel: "silent",
+				plugins: legacy({
+					modernTargets: ["safari >= 15.4"],
+					modernPolyfills: ["es.array.at"],
+					failOnMissingPolyfills: false,
+				}),
+				build: { write: false, minify: false, rollupOptions: { input: entry } },
+			});
+			assert.ok(!Array.isArray(result) && "output" in result);
+			const polyfill = result.output.find(
+				(item) =>
+					item.type === "chunk" &&
+					item.facadeModuleId === "\0vite/legacy-polyfills",
+			);
+			assert.ok(polyfill && polyfill.type === "chunk");
+			// Run the generated artifact, not just option validation: native cloning
+			// must retain its identity while the deliberately absent array method returns.
+			const nativeClone = structuredClone;
+			const context = vm.createContext({ structuredClone: nativeClone });
+			vm.runInContext("delete Array.prototype.at", context);
+			vm.runInContext(polyfill.code, context);
+			assert.equal(context.structuredClone, nativeClone);
+			assert.equal(vm.runInContext("[1, 2].at(-1)", context), 2);
+		} finally {
+			fs.rmSync(root, { recursive: true, force: true });
 		}
 	});
 });

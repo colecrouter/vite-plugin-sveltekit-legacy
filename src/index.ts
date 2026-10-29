@@ -11,7 +11,10 @@ export interface SvelteKitLegacyOptions
 		LegacyOptions,
 		Extract<
 			keyof LegacyOptions,
-			"additionalModernPolyfills" | "assumptions" | "modernTargets"
+			| "additionalModernPolyfills"
+			| "assumptions"
+			| "modernTargets"
+			| "modernPolyfills"
 		>
 	> {
 	outDir?: string;
@@ -22,7 +25,6 @@ export interface SvelteKitLegacyOptions
 	polyfills?: never;
 	additionalLegacyPolyfills?: never;
 	externalSystemJS?: never;
-	modernPolyfills?: never;
 }
 
 export default function legacy(options: SvelteKitLegacyOptions = {}): Plugin[] {
@@ -31,13 +33,16 @@ export default function legacy(options: SvelteKitLegacyOptions = {}): Plugin[] {
 	const {
 		outDir = ".svelte-kit",
 		failOnMissingPolyfills = true,
+		modernPolyfills = true,
 		...legacyOptions
 	} = options;
 
 	return [
 		...legacyPlugin({
+			// Automatic detection remains the default; an explicit list lets callers
+			// choose which compatibility repairs belong in their supported baseline.
+			modernPolyfills,
 			...legacyOptions,
-			modernPolyfills: true,
 			renderLegacyChunks: false,
 			renderModernChunks: true,
 		}),
@@ -110,7 +115,6 @@ function validateOptions(options: SvelteKitLegacyOptions) {
 		"polyfills",
 		"additionalLegacyPolyfills",
 		"externalSystemJS",
-		"modernPolyfills",
 	] as const) {
 		if (optionName in unsafeOptions) {
 			throw new Error(

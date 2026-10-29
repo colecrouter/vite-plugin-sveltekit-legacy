@@ -29,6 +29,14 @@ export default defineConfig({
 });
 ```
 
+## Polyfill selection
+
+`modernPolyfills` is forwarded to `@vitejs/plugin-legacy` and defaults to `true`
+(automatic usage detection). Supply an explicit array to control included modules.
+An explicit list disables automatic usage detection; callers must maintain coverage
+for their browser targets. Set `failOnMissingPolyfills: false` when deliberately
+disabling polyfills or providing an empty list.
+
 ## Unsupported Options
 
 - `renderLegacyChunks: true`
@@ -37,7 +45,6 @@ export default defineConfig({
 - `polyfills`
 - `additionalLegacyPolyfills`
 - `externalSystemJS`
-- `modernPolyfills`
 - SvelteKit `output.bundleStrategy: "inline"`
 
 ## FAQ
