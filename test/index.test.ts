@@ -3,8 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { build, type Plugin, type ResolvedConfig } from "vite";
 import vm from "node:vm";
+import { build, type Plugin, type ResolvedConfig } from "vite";
 import legacy from "../dist/index.js";
 import { rewriteSvelteKitClientEntries } from "../dist/rewrite.js";
 
@@ -79,7 +79,7 @@ describe("explicit polyfill output", () => {
 			const context = vm.createContext({ structuredClone: nativeClone });
 			vm.runInContext("delete Array.prototype.at", context);
 			vm.runInContext(polyfill.code, context);
-			assert.equal(context.structuredClone, nativeClone);
+			assert.equal(context["structuredClone"], nativeClone);
 			assert.equal(vm.runInContext("[1, 2].at(-1)", context), 2);
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
